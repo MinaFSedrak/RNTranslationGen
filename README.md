@@ -82,7 +82,7 @@ console.log(titleKey); // Output: "home.title"
 
 ## **📜 Notes**
 - Ensure your translation files (`en.json`, `ar.json`, etc.) are valid JSON format.
-- This tool requires `jq`, a lightweight JSON processor. Install it if not already available:
+- **Prerequisite:** This tool requires `jq`, a lightweight JSON processor. Install it if not already available:
   - **Mac**: `brew install jq`
   - **Linux**: `sudo apt install jq`
   - **Windows**: `choco install jq`
