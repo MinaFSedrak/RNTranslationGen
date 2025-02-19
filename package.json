@@ -11,6 +11,14 @@
     "i18n",
     "shell"
   ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/MinaFSedrak/RNTranslationGen.git"
+  },
+  "bugs": {
+    "url": "https://github.com/MinaFSedrak/RNTranslationGen/issues"
+  },
+  "homepage": "https://github.com/MinaFSedrak/RNTranslationGen#readme",
   "author": "Mina Sedrak",
   "license": "MIT"
 }
