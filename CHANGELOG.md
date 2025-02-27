@@ -1,6 +1,6 @@
 # Changelog
 
-## [1.2.0] - 2025-02-27
+## [1.2.1] - 2025-02-27
 ### Added
 - Support for YAML and JSON config files (`rn-translation-gen.yml` & `rn-translation-gen.json`).
 - Improved example section in the README with a multi-screen app structure.
