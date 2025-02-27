@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# Get the project root (the directory containing node_modules) and removing node_modules from the path
+PROJECT_ROOT=$(dirname "$(dirname "$(realpath "$0")")" | sed 's|/node_modules.*||')
+
 # Default values for input and output paths
 TRANSLATION_DIR=""
 OUTPUT_DIR=""
@@ -22,6 +25,22 @@ while [[ "$#" -gt 0 ]]; do
   esac
 done
 
+# If CLI args are empty, check for config files
+if [ -z "$TRANSLATION_DIR" ] || [ -z "$OUTPUT_DIR" ]; then
+  for file in "$PROJECT_ROOT/rn-translation-gen.yml" "$PROJECT_ROOT/rn-translation-gen.json"; do
+    if [ -f "$file" ]; then
+      if [[ "$file" == *.yml ]]; then
+        # Basic YAML to JSON conversion using awk (no external tools like yq)
+        TRANSLATION_DIR=$(awk -F ': ' '/input:/ {print $2}' "$file" | tr -d '"')
+        OUTPUT_DIR=$(awk -F ': ' '/output:/ {print $2}' "$file" | tr -d '"')
+      else
+        TRANSLATION_DIR=$(jq -r '.input // empty' "$file")
+        OUTPUT_DIR=$(jq -r '.output // empty' "$file")
+      fi
+      break
+    fi
+  done
+fi
 
 # Ensure jq is installed
 if ! command -v jq &> /dev/null; then
@@ -76,7 +95,6 @@ VALUES_FILE="$OUTPUT_DIR/translations.ts"
 # Generate translations.d.ts
 echo "/* eslint-disable quotes */" > "$TYPES_FILE"
 echo "/* This file is auto-generated. Disabling quotes rule to avoid conflicts with extracted translation keys. */" >> "$TYPES_FILE"
-
 echo "export type TranslationKey =" >> "$TYPES_FILE"
 jq -r 'paths | map(tostring) | join(".")' "$MAIN_FILE" | sed 's/^/  | "/;s/$/"/' >> "$TYPES_FILE"
 echo ";" >> "$TYPES_FILE"
@@ -84,7 +102,6 @@ echo ";" >> "$TYPES_FILE"
 # Generate translations.ts
 echo "/* eslint-disable quotes */" > "$VALUES_FILE"
 echo "/* This file is auto-generated. Contains actual translation key values. */" >> "$VALUES_FILE"
-
 echo "export const TRANSLATION_KEYS = " >> "$VALUES_FILE"
 jq 'def transform(prefix): 
       with_entries(
@@ -96,13 +113,5 @@ jq 'def transform(prefix):
       ); 
     transform("")' "$MAIN_FILE" >> "$VALUES_FILE"
 echo ";" >> "$VALUES_FILE"
-
-# Generate translationHelper.ts
-# cat <<EOL > "$HELPER_FILE"
-# export const t = (key: TranslationKeys): string => {
-#   // Replace this with your actual translation function (i18next.t, react-native-localize, etc.)
-#   return key; // Simulating translation function (replace this with actual translation logic)
-# };
-# EOL
 
 echo "✅ 🎯 Successfully generated translation types and constants in '$OUTPUT_DIR'!"
