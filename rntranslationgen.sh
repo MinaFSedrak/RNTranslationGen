@@ -102,6 +102,7 @@ echo ";" >> "$TYPES_FILE"
 # Generate translations.ts
 echo "/* eslint-disable quotes */" > "$VALUES_FILE"
 echo "/* This file is auto-generated. Contains actual translation key values. */" >> "$VALUES_FILE"
+echo "export type { TranslationKey } from './translations.d';" >> "$VALUES_FILE"
 echo "export const TRANSLATION_KEYS = " >> "$VALUES_FILE"
 jq 'def transform(prefix): 
       with_entries(
