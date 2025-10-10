@@ -14,7 +14,7 @@ Additionally, this tool is designed as a **build-time utility**, meaning it shou
 ✅ **Ensures compile-time errors** if an incorrect key is used.\
 ✅ **Works with deeply nested translation JSON structures.**\
 ✅ **Customizable input and output paths for translation files.**\
-✅ **Supports configuration via both JSON (`rn-translation-gen.json`) and YAML (`rn-translation-gen.yml`) files.**
+✅ **Supports configuration via both JSON (`rn-translation-gen.json`) and YAML (`rn-translation-gen.yml`) files.**\
 ✅ **New: Optionally exclude a top-level key (e.g., "translation") and unwrap its children using --exclude-key.**
 
 ---
