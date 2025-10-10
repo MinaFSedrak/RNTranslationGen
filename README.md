@@ -15,6 +15,7 @@ Additionally, this tool is designed as a **build-time utility**, meaning it shou
 ✅ **Works with deeply nested translation JSON structures.**\
 ✅ **Customizable input and output paths for translation files.**\
 ✅ **Supports configuration via both JSON (`rn-translation-gen.json`) and YAML (`rn-translation-gen.yml`) files.**
+✅ **New: Optionally exclude a top-level key (e.g., "translation") and unwrap its children using --exclude-key.**
 
 ---
 
@@ -39,7 +40,7 @@ yarn add rn-translation-gen --dev
 To generate translation types and keys, run the following command:
 
 ```sh
-npx rn-translation-gen --input <path-to-json-files> --output <path-to-generated-files>
+npx rn-translation-gen --input <path-to-json-files> --output <path-to-generated-files> [--exclude-key <key-to-exclude>]
 ```
 
 Alternatively, you can use a config file for input and output paths. The tool will automatically detect either:
@@ -52,7 +53,7 @@ Alternatively, you can use a config file for input and output paths. The tool wi
 **Using CLI arguments:**
 
 ```sh
-npx rn-translation-gen --input ./src/translations/json_files --output ./src/generated/translation_types
+npx rn-translation-gen --input ./src/translations/json_files --output ./src/generated/translation_types --exclude-key translation
 ```
 
 **Using a JSON config file (`rn-translation-gen.json`):**
@@ -75,7 +76,7 @@ output: ./src/generated/translation_types
 
 ## **📌 Example**
 
-Let’s say you’re building a **Multi-Screen App** with screens like **Chat**, **Profile**, and **Error Handling**. 
+Let’s say you’re building a **Multi-Screen App** with screens like **Chat**, **Profile**, and **Error Handling**.
 
 ### **Translation file (`en.json`):**
 
@@ -139,27 +140,27 @@ export const TRANSLATION_KEYS = {
       title: "screens.Chat.title",
       actions: {
         send: "screens.Chat.actions.send",
-        delete: "screens.Chat.actions.delete"
-      }
+        delete: "screens.Chat.actions.delete",
+      },
     },
     Profile: {
       title: "screens.Profile.title",
       actions: {
         edit: "screens.Profile.actions.edit",
-        logout: "screens.Profile.actions.logout"
-      }
-    }
+        logout: "screens.Profile.actions.logout",
+      },
+    },
   },
   messages: {
     notifications: {
       newMessage: "messages.notifications.newMessage",
-      userOnline: "messages.notifications.userOnline"
+      userOnline: "messages.notifications.userOnline",
     },
     errors: {
       network: "messages.errors.network",
-      unauthorized: "messages.errors.unauthorized"
-    }
-  }
+      unauthorized: "messages.errors.unauthorized",
+    },
+  },
 };
 ```
 
@@ -206,4 +207,3 @@ export default ChatScreen;
 ---
 
 ✅ Enjoy seamless translations! Feel free to contribute or report issues. 🚀
-
