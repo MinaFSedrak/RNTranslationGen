@@ -1,11 +1,11 @@
 #!/bin/bash
-
 # Get the project root (the directory containing node_modules) and removing node_modules from the path
 PROJECT_ROOT=$(dirname "$(dirname "$(realpath "$0")")" | sed 's|/node_modules.*||')
 
 # Default values for input and output paths
 TRANSLATION_DIR=""
 OUTPUT_DIR=""
+EXCLUDE_KEY=""
 
 # Parse arguments
 while [[ "$#" -gt 0 ]]; do
@@ -16,6 +16,10 @@ while [[ "$#" -gt 0 ]]; do
       ;;
     --output)
       OUTPUT_DIR="$2"
+      shift 2
+      ;;
+    --exclude-key)
+      EXCLUDE_KEY="$2"
       shift 2
       ;;
     *)
@@ -56,7 +60,6 @@ if [ -z "$TRANSLATION_DIR" ]; then
     echo "❌ No input directory specified. Use --input <path>."
     exit 1
 fi
-
 if [ -z "$OUTPUT_DIR" ]; then
     echo "❌ No output directory specified. Use --output <path>."
     exit 1
@@ -82,10 +85,16 @@ if [ -z "$MAIN_FILE" ]; then
     echo "❌ No JSON translation files found in '$TRANSLATION_DIR'."
     exit 1
 fi
-
 if ! jq empty "$MAIN_FILE" >/dev/null 2>&1; then
     echo "❌ JSON format error in '$MAIN_FILE'! Please fix it."
     exit 1
+fi
+
+# Prepare filtered JSON content, replacing root with the value of the excluded key if provided
+if [ -n "$EXCLUDE_KEY" ]; then
+  FILTERED_JSON=$(jq "if has(\"$EXCLUDE_KEY\") then .[\"$EXCLUDE_KEY\"] else . end" "$MAIN_FILE")
+else
+  FILTERED_JSON=$(cat "$MAIN_FILE")
 fi
 
 # Define output file paths
@@ -96,7 +105,7 @@ VALUES_FILE="$OUTPUT_DIR/translations.ts"
 echo "/* eslint-disable quotes */" > "$TYPES_FILE"
 echo "/* This file is auto-generated. Disabling quotes rule to avoid conflicts with extracted translation keys. */" >> "$TYPES_FILE"
 echo "export type TranslationKey =" >> "$TYPES_FILE"
-jq -r 'paths | map(tostring) | join(".")' "$MAIN_FILE" | sed 's/^/  | "/;s/$/"/' >> "$TYPES_FILE"
+echo "$FILTERED_JSON" | jq -r 'paths | map(tostring) | join(".")' | sed 's/^/  | "/;s/$/"/' >> "$TYPES_FILE"
 echo ";" >> "$TYPES_FILE"
 
 # Generate translations.ts
@@ -104,7 +113,7 @@ echo "/* eslint-disable quotes */" > "$VALUES_FILE"
 echo "/* This file is auto-generated. Contains actual translation key values. */" >> "$VALUES_FILE"
 echo "export type { TranslationKey } from './translations.d';" >> "$VALUES_FILE"
 echo "export const TRANSLATION_KEYS = " >> "$VALUES_FILE"
-jq 'def transform(prefix): 
+echo "$FILTERED_JSON" | jq 'def transform(prefix): 
       with_entries(
         .key as $k | 
         if (.value | type) == "object" 
@@ -112,7 +121,7 @@ jq 'def transform(prefix):
         else .value = "\(prefix)\($k)" 
         end
       ); 
-    transform("")' "$MAIN_FILE" >> "$VALUES_FILE"
+    transform("")' >> "$VALUES_FILE"
 echo ";" >> "$VALUES_FILE"
 
 echo "✅ 🎯 Successfully generated translation types and constants in '$OUTPUT_DIR'!"
