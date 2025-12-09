@@ -1,5 +1,25 @@
 # Changelog
 
+## [1.4.1] - 2025-12-09
+
+### Added
+
+- Enhanced package.json metadata with `main`, `files`, and improved `bin` configuration.
+- Better npm package structure for improved module resolution.
+
+## [1.4.0] - 2025-12-09
+
+### Added
+
+- New `--disable-eslint-quotes` CLI flag to control eslint quote disabling in generated files.
+- Updated shell script to support the `--disable-eslint-quotes` option.
+- Updated README with usage instructions and documentation for the new flag.
+
+### Changed
+
+- Default behavior now generates files without `/* eslint-disable quotes */` comments.
+- To include eslint disable comments, use the `--disable-eslint-quotes` flag.
+
 ## [1.3.0] - 2025-03-01
 
 ### Added
