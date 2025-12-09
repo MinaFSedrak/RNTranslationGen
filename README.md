@@ -15,7 +15,8 @@ Additionally, this tool is designed as a **build-time utility**, meaning it shou
 ✅ **Works with deeply nested translation JSON structures.**\
 ✅ **Customizable input and output paths for translation files.**\
 ✅ **Supports configuration via both JSON (`rn-translation-gen.json`) and YAML (`rn-translation-gen.yml`) files.**\
-✅ **New: Optionally exclude a top-level key (e.g., "translation") and unwrap its children using --exclude-key.**
+✅ **Optionally exclude a top-level key (e.g., "translation") and unwrap its children using `--exclude-key`.**\
+✅ **Control eslint quote disabling in generated files using `--disable-eslint-quotes` flag.**
 
 ---
 
@@ -40,8 +41,15 @@ yarn add rn-translation-gen --dev
 To generate translation types and keys, run the following command:
 
 ```sh
-npx rn-translation-gen --input <path-to-json-files> --output <path-to-generated-files> [--exclude-key <key-to-exclude>]
+npx rn-translation-gen --input <path-to-json-files> --output <path-to-generated-files> [--exclude-key <key-to-exclude>] [--disable-eslint-quotes]
 ```
+
+### **Flags:**
+
+- `--input` (required): Path to the directory containing translation JSON files
+- `--output` (required): Path to the output directory for generated files
+- `--exclude-key` (optional): Exclude a top-level key and unwrap its children
+- `--disable-eslint-quotes` (optional): Include `/* eslint-disable quotes */` comments in generated files
 
 Alternatively, you can use a config file for input and output paths. The tool will automatically detect either:
 
@@ -50,10 +58,16 @@ Alternatively, you can use a config file for input and output paths. The tool wi
 
 ### **Examples:**
 
-**Using CLI arguments:**
+**Using CLI arguments (without eslint disable comments by default):**
 
 ```sh
 npx rn-translation-gen --input ./src/translations/json_files --output ./src/generated/translation_types --exclude-key translation
+```
+
+**Using CLI arguments with eslint disable comments:**
+
+```sh
+npx rn-translation-gen --input ./src/translations/json_files --output ./src/generated/translation_types --disable-eslint-quotes
 ```
 
 **Using a JSON config file (`rn-translation-gen.json`):**

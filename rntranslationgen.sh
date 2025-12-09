@@ -6,6 +6,7 @@ PROJECT_ROOT=$(dirname "$(dirname "$(realpath "$0")")" | sed 's|/node_modules.*|
 TRANSLATION_DIR=""
 OUTPUT_DIR=""
 EXCLUDE_KEY=""
+DISABLE_ESLINT_QUOTES=false
 
 # Parse arguments
 while [[ "$#" -gt 0 ]]; do
@@ -21,6 +22,10 @@ while [[ "$#" -gt 0 ]]; do
     --exclude-key)
       EXCLUDE_KEY="$2"
       shift 2
+      ;;
+    --disable-eslint-quotes)
+      DISABLE_ESLINT_QUOTES=true
+      shift
       ;;
     *)
       echo "❌ Unknown option: $1"
@@ -101,16 +106,31 @@ fi
 TYPES_FILE="$OUTPUT_DIR/translations.d.ts"
 VALUES_FILE="$OUTPUT_DIR/translations.ts"
 
+# Prepare eslint disable comment based on flag
+if [ "$DISABLE_ESLINT_QUOTES" = true ]; then
+  ESLINT_DISABLE="/* eslint-disable quotes */"
+else
+  ESLINT_DISABLE=""
+fi
+
 # Generate translations.d.ts
-echo "/* eslint-disable quotes */" > "$TYPES_FILE"
-echo "/* This file is auto-generated. Disabling quotes rule to avoid conflicts with extracted translation keys. */" >> "$TYPES_FILE"
+if [ -n "$ESLINT_DISABLE" ]; then
+  echo "$ESLINT_DISABLE" > "$TYPES_FILE"
+  echo "/* This file is auto-generated. Disabling quotes rule to avoid conflicts with extracted translation keys. */" >> "$TYPES_FILE"
+else
+  echo "/* This file is auto-generated. */" > "$TYPES_FILE"
+fi
 echo "export type TranslationKey =" >> "$TYPES_FILE"
 echo "$FILTERED_JSON" | jq -r 'paths | map(tostring) | join(".")' | sed 's/^/  | "/;s/$/"/' >> "$TYPES_FILE"
 echo ";" >> "$TYPES_FILE"
 
 # Generate translations.ts
-echo "/* eslint-disable quotes */" > "$VALUES_FILE"
-echo "/* This file is auto-generated. Contains actual translation key values. */" >> "$VALUES_FILE"
+if [ -n "$ESLINT_DISABLE" ]; then
+  echo "$ESLINT_DISABLE" > "$VALUES_FILE"
+  echo "/* This file is auto-generated. Contains actual translation key values. */" >> "$VALUES_FILE"
+else
+  echo "/* This file is auto-generated. */" > "$VALUES_FILE"
+fi
 echo "export type { TranslationKey } from './translations.d';" >> "$VALUES_FILE"
 echo "export const TRANSLATION_KEYS = " >> "$VALUES_FILE"
 echo "$FILTERED_JSON" | jq 'def transform(prefix): 
