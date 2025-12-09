@@ -9,14 +9,16 @@ Additionally, this tool is designed as a **build-time utility**, meaning it shou
 
 ## **🚀 Features**
 
-✅ **Generates TypeScript types (`translations.d.ts`)** for all translation keys.\
-✅ **Creates a `TRANSLATION_KEYS` object (`translations.ts`)** for type-safe key usage.\
+✅ **Generates TypeScript types (`translations.types.d.ts`)** for all translation keys.\
+✅ **Creates a `TRANSLATION_KEYS` object (`translations.types.ts`)** for type-safe key usage.\
 ✅ **Ensures compile-time errors** if an incorrect key is used.\
 ✅ **Works with deeply nested translation JSON structures.**\
 ✅ **Customizable input and output paths for translation files.**\
 ✅ **Supports configuration via both JSON (`rn-translation-gen.json`) and YAML (`rn-translation-gen.yml`) files.**\
 ✅ **Optionally exclude a top-level key (e.g., "translation") and unwrap its children using `--exclude-key`.**\
-✅ **Control eslint quote disabling in generated files using `--disable-eslint-quotes` flag.**
+✅ **Control eslint quote disabling in generated files using `--disable-eslint-quotes` flag.**\
+✅ **Verify types without generating files using `--noEmit` flag (perfect for CI/CD pipelines).**\
+✅ **Built-in help documentation with `--help` and `-h` flags.**
 
 ---
 
@@ -41,7 +43,7 @@ yarn add rn-translation-gen --dev
 To generate translation types and keys, run the following command:
 
 ```sh
-npx rn-translation-gen --input <path-to-json-files> --output <path-to-generated-files> [--exclude-key <key-to-exclude>] [--disable-eslint-quotes]
+npx rn-translation-gen --input <path-to-json-files> --output <path-to-generated-files> [--exclude-key <key-to-exclude>] [--disable-eslint-quotes] [--noEmit]
 ```
 
 ### **Flags:**
@@ -50,6 +52,8 @@ npx rn-translation-gen --input <path-to-json-files> --output <path-to-generated-
 - `--output` (required): Path to the output directory for generated files
 - `--exclude-key` (optional): Exclude a top-level key and unwrap its children
 - `--disable-eslint-quotes` (optional): Include `/* eslint-disable quotes */` comments in generated files
+- `--noEmit` (optional): Verify types without generating files (similar to `tsc --noEmit`)
+- `--help, -h` (optional): Display help documentation with all available options
 
 Alternatively, you can use a config file for input and output paths. The tool will automatically detect either:
 
@@ -69,6 +73,14 @@ npx rn-translation-gen --input ./src/translations/json_files --output ./src/gene
 ```sh
 npx rn-translation-gen --input ./src/translations/json_files --output ./src/generated/translation_types --disable-eslint-quotes
 ```
+
+**Verifying types without generating files (for CI/CD pipelines):**
+
+```sh
+npx rn-translation-gen --input ./src/translations/json_files --output ./src/generated/translation_types --noEmit
+```
+
+This fails if translation files have changed but types haven't been regenerated, perfect for catching out-of-sync translations in your pipeline.
 
 **Using a JSON config file (`rn-translation-gen.json`):**
 

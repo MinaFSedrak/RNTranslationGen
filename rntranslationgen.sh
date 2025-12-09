@@ -1,4 +1,45 @@
 #!/bin/bash
+
+# Help function
+show_help() {
+  cat << 'EOF'
+Usage: rn-translation-gen [OPTIONS]
+
+Generate strongly typed translation keys from JSON files for React Native and TypeScript projects.
+
+OPTIONS:
+  --input <path>                  Path to the directory containing translation JSON files (required)
+  --output <path>                 Path to the output directory for generated files (required)
+  --exclude-key <key>             Exclude a top-level key and unwrap its children (optional)
+  --disable-eslint-quotes         Include eslint-disable-quotes comments in generated files (optional)
+  --noEmit                        Verify types without generating files, similar to tsc --noEmit (optional)
+  --help, -h                      Display this help message
+
+EXAMPLES:
+  # Generate translation types
+  rn-translation-gen --input ./locales --output ./generated
+
+  # Generate with config file (rn-translation-gen.json or rn-translation-gen.yml)
+  rn-translation-gen
+
+  # Exclude top-level key
+  rn-translation-gen --input ./locales --output ./generated --exclude-key translation
+
+  # Include eslint disable comments
+  rn-translation-gen --input ./locales --output ./generated --disable-eslint-quotes
+
+  # Check types without generating (for CI/CD pipelines)
+  rn-translation-gen --input ./locales --output ./generated --noEmit
+
+OUTPUT FILES:
+  - translations.types.d.ts       TypeScript type definitions for translation keys
+  - translations.types.ts         TRANSLATION_KEYS constant and type re-export
+
+For more information, visit: https://github.com/MinaFSedrak/RNTranslationGen
+EOF
+  exit 0
+}
+
 # Get the project root (the directory containing node_modules) and removing node_modules from the path
 PROJECT_ROOT=$(dirname "$(dirname "$(realpath "$0")")" | sed 's|/node_modules.*||')
 
@@ -7,10 +48,14 @@ TRANSLATION_DIR=""
 OUTPUT_DIR=""
 EXCLUDE_KEY=""
 DISABLE_ESLINT_QUOTES=false
+NO_EMIT=false
 
 # Parse arguments
 while [[ "$#" -gt 0 ]]; do
   case "$1" in
+    --help|-h)
+      show_help
+      ;;
     --input)
       TRANSLATION_DIR="$2"
       shift 2
@@ -27,8 +72,13 @@ while [[ "$#" -gt 0 ]]; do
       DISABLE_ESLINT_QUOTES=true
       shift
       ;;
+    --noEmit)
+      NO_EMIT=true
+      shift
+      ;;
     *)
       echo "❌ Unknown option: $1"
+      echo "Run with --help for usage information"
       exit 1
       ;;
   esac
@@ -111,8 +161,15 @@ else
 fi
 
 # Define output file paths
-TYPES_FILE="$OUTPUT_DIR/translations.d.ts"
-VALUES_FILE="$OUTPUT_DIR/translations.ts"
+if [ "$NO_EMIT" = true ]; then
+  # Use temporary directory for --noEmit mode
+  TEMP_DIR=$(mktemp -d)
+  TYPES_FILE="$TEMP_DIR/translations.types.d.ts"
+  VALUES_FILE="$TEMP_DIR/translations.types.ts"
+else
+  TYPES_FILE="$OUTPUT_DIR/translations.types.d.ts"
+  VALUES_FILE="$OUTPUT_DIR/translations.types.ts"
+fi
 
 # Prepare eslint disable comment based on flag
 if [ "$DISABLE_ESLINT_QUOTES" = true ]; then
@@ -152,4 +209,32 @@ echo "$FILTERED_JSON" | jq 'def transform(prefix):
     transform("")' >> "$VALUES_FILE"
 echo ";" >> "$VALUES_FILE"
 
-echo "✅ 🎯 Successfully generated translation types and constants in '$OUTPUT_DIR'!"
+# Handle --noEmit mode
+if [ "$NO_EMIT" = true ]; then
+  # Check if output directory has existing files to compare
+  if [ ! -f "$OUTPUT_DIR/translations.types.d.ts" ]; then
+    echo "❌ Output file '$OUTPUT_DIR/translations.types.d.ts' not found. Run generation first."
+    rm -rf "$TEMP_DIR"
+    exit 1
+  fi
+  
+  # Compare generated types with existing files
+  if ! diff -q "$TEMP_DIR/translations.types.d.ts" "$OUTPUT_DIR/translations.types.d.ts" >/dev/null 2>&1; then
+    echo "❌ Type check failed: Generated types don't match existing files!"
+    echo "   Translation files have changed. Run without --noEmit to regenerate types."
+    rm -rf "$TEMP_DIR"
+    exit 1
+  fi
+  
+  if ! diff -q "$TEMP_DIR/translations.types.ts" "$OUTPUT_DIR/translations.types.ts" >/dev/null 2>&1; then
+    echo "❌ Type check failed: Generated constants don't match existing files!"
+    echo "   Translation files have changed. Run without --noEmit to regenerate types."
+    rm -rf "$TEMP_DIR"
+    exit 1
+  fi
+  
+  rm -rf "$TEMP_DIR"
+  echo "✅ 🎯 Type check passed! All translation types are up-to-date."
+else
+  echo "✅ 🎯 Successfully generated translation types and constants in '$OUTPUT_DIR'!"
+fi

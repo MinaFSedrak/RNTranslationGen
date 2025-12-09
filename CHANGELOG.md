@@ -1,5 +1,20 @@
 # Changelog
 
+## [1.5.0] - 2025-12-09
+
+### Added
+
+- New `--noEmit` flag to verify types without generating files (similar to `tsc --noEmit`).
+- New `--help` and `-h` flags for built-in documentation.
+- Type validation mode that compares generated types against existing files.
+- Updated README with `--noEmit` usage examples and CI/CD pipeline use case.
+- Perfect for detecting out-of-sync translations in CI/CD pipelines.
+
+### Changed
+
+- Enhanced error messages for type validation failures.
+- Renamed generated files from `translations.d.ts` and `translations.ts` to `translations.types.d.ts` and `translations.types.ts` for better clarity.
+
 ## [1.4.2] - 2025-12-09
 
 ### Added
