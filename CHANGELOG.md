@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.5.1] - 2025-12-09
+
+### Fixed
+
+- Fixed import path in generated `translations.types.ts` file from `./translations.d` to `./translations.types.d`
+
 ## [1.5.0] - 2025-12-09
 
 ### Added

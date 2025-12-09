@@ -196,7 +196,7 @@ if [ -n "$ESLINT_DISABLE" ]; then
 else
   echo "/* This file is auto-generated. */" > "$VALUES_FILE"
 fi
-echo "export type { TranslationKey } from './translations.d';" >> "$VALUES_FILE"
+echo "export type { TranslationKey } from './translations.types.d';" >> "$VALUES_FILE"
 echo "export const TRANSLATION_KEYS = " >> "$VALUES_FILE"
 echo "$FILTERED_JSON" | jq 'def transform(prefix): 
       with_entries(
