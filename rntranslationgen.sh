@@ -42,9 +42,17 @@ if [ -z "$TRANSLATION_DIR" ] || [ -z "$OUTPUT_DIR" ]; then
         # Basic YAML to JSON conversion using awk (no external tools like yq)
         TRANSLATION_DIR=$(awk -F ': ' '/input:/ {print $2}' "$file" | tr -d '"')
         OUTPUT_DIR=$(awk -F ': ' '/output:/ {print $2}' "$file" | tr -d '"')
+        EXCLUDE_KEY=$(awk -F ': ' '/excludeKey:/ {print $2}' "$file" | tr -d '"')
+        DISABLE_ESLINT=$(awk -F ': ' '/disableEslintQuotes:/ {print $2}' "$file" | tr -d '"')
       else
         TRANSLATION_DIR=$(jq -r '.input // empty' "$file")
         OUTPUT_DIR=$(jq -r '.output // empty' "$file")
+        EXCLUDE_KEY=$(jq -r '.excludeKey // empty' "$file")
+        DISABLE_ESLINT=$(jq -r '.disableEslintQuotes // empty' "$file")
+      fi
+      # Convert YAML/JSON boolean to bash boolean
+      if [ "$DISABLE_ESLINT" = "true" ] || [ "$DISABLE_ESLINT" = "True" ]; then
+        DISABLE_ESLINT_QUOTES=true
       fi
       break
     fi

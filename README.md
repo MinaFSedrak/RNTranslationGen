@@ -75,7 +75,9 @@ npx rn-translation-gen --input ./src/translations/json_files --output ./src/gene
 ```json
 {
   "input": "./src/translations/json_files",
-  "output": "./src/generated/translation_types"
+  "output": "./src/generated/translation_types",
+  "excludeKey": "translation",
+  "disableEslintQuotes": true
 }
 ```
 
@@ -84,6 +86,8 @@ npx rn-translation-gen --input ./src/translations/json_files --output ./src/gene
 ```yaml
 input: ./src/translations/json_files
 output: ./src/generated/translation_types
+excludeKey: translation
+disableEslintQuotes: true
 ```
 
 ---

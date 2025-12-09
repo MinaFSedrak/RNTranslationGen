@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.4.2] - 2025-12-09
+
+### Added
+
+- Config file support for `excludeKey` and `disableEslintQuotes` flags.
+- JSON config now supports: `excludeKey` and `disableEslintQuotes` properties.
+- YAML config now supports: `excludeKey` and `disableEslintQuotes` properties.
+- Updated README with complete config file examples.
+
+### Changed
+
+- Config files can now fully replace CLI arguments for all options.
+
 ## [1.4.1] - 2025-12-09
 
 ### Added
