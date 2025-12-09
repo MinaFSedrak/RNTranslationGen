@@ -2,14 +2,22 @@
   "name": "rn-translation-gen",
   "version": "1.4.0",
   "description": "This library automatically generates strongly typed translation keys from JSON files for React Native and TypeScript projects. It ensures compile-time safety, preventing errors caused by incorrect translation keys.",
+  "main": "rntranslationgen.sh",
   "bin": {
-    "rntranslationgen": "rntranslationgen.sh"
+    "rn-translation-gen": "./rntranslationgen.sh"
   },
+  "files": [
+    "rntranslationgen.sh",
+    "translations.ts",
+    "translations.d.ts"
+  ],
   "keywords": [
     "react-native",
     "translations",
     "i18n",
-    "shell"
+    "shell",
+    "typescript",
+    "type-safe"
   ],
   "repository": {
     "type": "git",
@@ -20,5 +28,8 @@
   },
   "homepage": "https://github.com/MinaFSedrak/RNTranslationGen#readme",
   "author": "Mina Sedrak",
-  "license": "MIT"
+  "license": "MIT",
+  "engines": {
+    "node": ">=14"
+  }
 }
