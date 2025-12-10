@@ -15,6 +15,7 @@ Additionally, this tool is designed as a **build-time utility**, meaning it shou
 ✅ **Works with deeply nested translation JSON structures.**\
 ✅ **Customizable input and output paths for translation files.**\
 ✅ **Supports configuration via both JSON (`rn-translation-gen.json`) and YAML (`rn-translation-gen.yml`) files.**\
+✅ **Flexible output modes: Single-file (default) or dual-file mode using `--output-mode`.**\
 ✅ **Optionally exclude a top-level key (e.g., "translation") and unwrap its children using `--exclude-key`.**\
 ✅ **Control eslint quote disabling in generated files using `--disable-eslint-quotes` flag.**\
 ✅ **Verify types without generating files using `--noEmit` flag (perfect for CI/CD pipelines).**\
@@ -43,13 +44,14 @@ yarn add rn-translation-gen --dev
 To generate translation types and keys, run the following command:
 
 ```sh
-npx rn-translation-gen --input <path-to-json-files> --output <path-to-generated-files> [--exclude-key <key-to-exclude>] [--disable-eslint-quotes] [--noEmit]
+npx rn-translation-gen --input <path-to-json-files> --output <path-to-generated-files> [--output-mode single|dual] [--exclude-key <key-to-exclude>] [--disable-eslint-quotes] [--noEmit]
 ```
 
 ### **Flags:**
 
 - `--input` (required): Path to the directory containing translation JSON files
 - `--output` (required): Path to the output directory for generated files
+- `--output-mode` (optional): Output mode - `single` (default) generates one file, `dual` generates two files
 - `--exclude-key` (optional): Exclude a top-level key and unwrap its children
 - `--disable-eslint-quotes` (optional): Include `/* eslint-disable quotes */` comments in generated files
 - `--noEmit` (optional): Verify types without generating files (similar to `tsc --noEmit`)
@@ -62,10 +64,16 @@ Alternatively, you can use a config file for input and output paths. The tool wi
 
 ### **Examples:**
 
-**Using CLI arguments (without eslint disable comments by default):**
+**Single-file mode (default) with exclude-key:**
 
 ```sh
 npx rn-translation-gen --input ./src/translations/json_files --output ./src/generated/translation_types --exclude-key translation
+```
+
+**Dual-file mode with exclude-key:**
+
+```sh
+npx rn-translation-gen --input ./src/translations/json_files --output ./src/generated/translation_types --output-mode dual --exclude-key translation
 ```
 
 **Using CLI arguments with eslint disable comments:**

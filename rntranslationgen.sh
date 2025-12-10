@@ -12,12 +12,16 @@ OPTIONS:
   --output <path>                 Path to the output directory for generated files (required)
   --exclude-key <key>             Exclude a top-level key and unwrap its children (optional)
   --disable-eslint-quotes         Include eslint-disable-quotes comments in generated files (optional)
+  --output-mode <mode>            Output mode: 'single' or 'dual' (default: single) (optional)
   --noEmit                        Verify types without generating files, similar to tsc --noEmit (optional)
   --help, -h                      Display this help message
 
 EXAMPLES:
-  # Generate translation types
+  # Generate translation types (single file mode)
   rn-translation-gen --input ./locales --output ./generated
+
+  # Generate with dual file mode
+  rn-translation-gen --input ./locales --output ./generated --output-mode dual
 
   # Generate with config file (rn-translation-gen.json or rn-translation-gen.yml)
   rn-translation-gen
@@ -32,8 +36,12 @@ EXAMPLES:
   rn-translation-gen --input ./locales --output ./generated --noEmit
 
 OUTPUT FILES:
-  - translations.types.d.ts       TypeScript type definitions for translation keys
-  - translations.types.ts         TRANSLATION_KEYS constant and type re-export
+  Single mode (default):
+    - translations.types.ts         TypeScript types and TRANSLATION_KEYS constant
+  
+  Dual mode:
+    - translations.types.d.ts       TypeScript type definitions for translation keys
+    - translations.types.ts         TRANSLATION_KEYS constant and type re-export
 
 For more information, visit: https://github.com/MinaFSedrak/RNTranslationGen
 EOF
@@ -49,6 +57,7 @@ OUTPUT_DIR=""
 EXCLUDE_KEY=""
 DISABLE_ESLINT_QUOTES=false
 NO_EMIT=false
+OUTPUT_MODE="single"
 
 # Parse arguments
 while [[ "$#" -gt 0 ]]; do
@@ -75,6 +84,14 @@ while [[ "$#" -gt 0 ]]; do
     --noEmit)
       NO_EMIT=true
       shift
+      ;;
+    --output-mode)
+      OUTPUT_MODE="$2"
+      if [ "$OUTPUT_MODE" != "single" ] && [ "$OUTPUT_MODE" != "dual" ]; then
+        echo "❌ Invalid output mode: $OUTPUT_MODE. Use 'single' or 'dual'."
+        exit 1
+      fi
+      shift 2
       ;;
     *)
       echo "❌ Unknown option: $1"
@@ -160,15 +177,27 @@ else
   FILTERED_JSON=$(cat "$MAIN_FILE")
 fi
 
-# Define output file paths
-if [ "$NO_EMIT" = true ]; then
-  # Use temporary directory for --noEmit mode
-  TEMP_DIR=$(mktemp -d)
-  TYPES_FILE="$TEMP_DIR/translations.types.d.ts"
-  VALUES_FILE="$TEMP_DIR/translations.types.ts"
+# Define output file paths based on output mode
+if [ "$OUTPUT_MODE" = "single" ]; then
+  # Single file mode: only translations.types.ts
+  if [ "$NO_EMIT" = true ]; then
+    TEMP_DIR=$(mktemp -d)
+    VALUES_FILE="$TEMP_DIR/translations.types.ts"
+    TYPES_FILE=""
+  else
+    VALUES_FILE="$OUTPUT_DIR/translations.types.ts"
+    TYPES_FILE=""
+  fi
 else
-  TYPES_FILE="$OUTPUT_DIR/translations.types.d.ts"
-  VALUES_FILE="$OUTPUT_DIR/translations.types.ts"
+  # Dual file mode: both .d.ts and .ts files
+  if [ "$NO_EMIT" = true ]; then
+    TEMP_DIR=$(mktemp -d)
+    TYPES_FILE="$TEMP_DIR/translations.types.d.ts"
+    VALUES_FILE="$TEMP_DIR/translations.types.ts"
+  else
+    TYPES_FILE="$OUTPUT_DIR/translations.types.d.ts"
+    VALUES_FILE="$OUTPUT_DIR/translations.types.ts"
+  fi
 fi
 
 # Prepare eslint disable comment based on flag
@@ -178,25 +207,39 @@ else
   ESLINT_DISABLE=""
 fi
 
-# Generate translations.d.ts
-if [ -n "$ESLINT_DISABLE" ]; then
-  echo "$ESLINT_DISABLE" > "$TYPES_FILE"
-  echo "/* This file is auto-generated. Disabling quotes rule to avoid conflicts with extracted translation keys. */" >> "$TYPES_FILE"
-else
-  echo "/* This file is auto-generated. */" > "$TYPES_FILE"
+# Generate translations.d.ts (only in dual mode)
+if [ "$OUTPUT_MODE" = "dual" ]; then
+  if [ -n "$ESLINT_DISABLE" ]; then
+    echo "$ESLINT_DISABLE" > "$TYPES_FILE"
+    echo "/* This file is auto-generated. Disabling quotes rule to avoid conflicts with extracted translation keys. */" >> "$TYPES_FILE"
+  else
+    echo "/* This file is auto-generated. */" > "$TYPES_FILE"
+  fi
+  echo "export type TranslationKey =" >> "$TYPES_FILE"
+  echo "$FILTERED_JSON" | jq -r 'paths | map(tostring) | join(".")' | sed 's/^/  | "/;s/$/"/' >> "$TYPES_FILE"
+  echo ";" >> "$TYPES_FILE"
 fi
-echo "export type TranslationKey =" >> "$TYPES_FILE"
-echo "$FILTERED_JSON" | jq -r 'paths | map(tostring) | join(".")' | sed 's/^/  | "/;s/$/"/' >> "$TYPES_FILE"
-echo ";" >> "$TYPES_FILE"
 
 # Generate translations.ts
 if [ -n "$ESLINT_DISABLE" ]; then
   echo "$ESLINT_DISABLE" > "$VALUES_FILE"
-  echo "/* This file is auto-generated. Contains actual translation key values. */" >> "$VALUES_FILE"
+  echo "/* This file is auto-generated. */" >> "$VALUES_FILE"
 else
   echo "/* This file is auto-generated. */" > "$VALUES_FILE"
 fi
-echo "export type { TranslationKey } from './translations.types.d';" >> "$VALUES_FILE"
+
+# Add type export based on mode
+if [ "$OUTPUT_MODE" = "single" ]; then
+  # Single file: export types inline
+  echo "export type TranslationKey =" >> "$VALUES_FILE"
+  echo "$FILTERED_JSON" | jq -r 'paths | map(tostring) | join(".")' | sed 's/^/  | "/;s/$/"/' >> "$VALUES_FILE"
+  echo ";" >> "$VALUES_FILE"
+else
+  # Dual file: re-export type from .d.ts file
+  echo "export type { TranslationKey } from './translations.types.d';" >> "$VALUES_FILE"
+fi
+
+# Add translation keys
 echo "export const TRANSLATION_KEYS = " >> "$VALUES_FILE"
 echo "$FILTERED_JSON" | jq 'def transform(prefix): 
       with_entries(
@@ -211,30 +254,46 @@ echo ";" >> "$VALUES_FILE"
 
 # Handle --noEmit mode
 if [ "$NO_EMIT" = true ]; then
-  # Check if output directory has existing files to compare
-  if [ ! -f "$OUTPUT_DIR/translations.types.d.ts" ]; then
-    echo "❌ Output file '$OUTPUT_DIR/translations.types.d.ts' not found. Run generation first."
-    rm -rf "$TEMP_DIR"
-    exit 1
-  fi
-  
-  # Compare generated types with existing files
-  if ! diff -q "$TEMP_DIR/translations.types.d.ts" "$OUTPUT_DIR/translations.types.d.ts" >/dev/null 2>&1; then
-    echo "❌ Type check failed: Generated types don't match existing files!"
-    echo "   Translation files have changed. Run without --noEmit to regenerate types."
-    rm -rf "$TEMP_DIR"
-    exit 1
-  fi
-  
-  if ! diff -q "$TEMP_DIR/translations.types.ts" "$OUTPUT_DIR/translations.types.ts" >/dev/null 2>&1; then
-    echo "❌ Type check failed: Generated constants don't match existing files!"
-    echo "   Translation files have changed. Run without --noEmit to regenerate types."
-    rm -rf "$TEMP_DIR"
-    exit 1
+  # Check for files to validate based on output mode
+  if [ "$OUTPUT_MODE" = "single" ]; then
+    if [ ! -f "$OUTPUT_DIR/translations.types.ts" ]; then
+      echo "❌ Output file '$OUTPUT_DIR/translations.types.ts' not found. Run generation first."
+      rm -rf "$TEMP_DIR"
+      exit 1
+    fi
+    if ! diff -q "$TEMP_DIR/translations.types.ts" "$OUTPUT_DIR/translations.types.ts" >/dev/null 2>&1; then
+      echo "❌ Type check failed: Generated file doesn't match existing file!"
+      echo "   Translation files have changed. Run without --noEmit to regenerate types."
+      rm -rf "$TEMP_DIR"
+      exit 1
+    fi
+  else
+    # Dual mode: check both files
+    if [ ! -f "$OUTPUT_DIR/translations.types.d.ts" ]; then
+      echo "❌ Output file '$OUTPUT_DIR/translations.types.d.ts' not found. Run generation first."
+      rm -rf "$TEMP_DIR"
+      exit 1
+    fi
+    if ! diff -q "$TEMP_DIR/translations.types.d.ts" "$OUTPUT_DIR/translations.types.d.ts" >/dev/null 2>&1; then
+      echo "❌ Type check failed: Generated types don't match existing files!"
+      echo "   Translation files have changed. Run without --noEmit to regenerate types."
+      rm -rf "$TEMP_DIR"
+      exit 1
+    fi
+    if ! diff -q "$TEMP_DIR/translations.types.ts" "$OUTPUT_DIR/translations.types.ts" >/dev/null 2>&1; then
+      echo "❌ Type check failed: Generated constants don't match existing files!"
+      echo "   Translation files have changed. Run without --noEmit to regenerate types."
+      rm -rf "$TEMP_DIR"
+      exit 1
+    fi
   fi
   
   rm -rf "$TEMP_DIR"
   echo "✅ 🎯 Type check passed! All translation types are up-to-date."
 else
-  echo "✅ 🎯 Successfully generated translation types and constants in '$OUTPUT_DIR'!"
+  if [ "$OUTPUT_MODE" = "single" ]; then
+    echo "✅ 🎯 Successfully generated translations.types.ts in '$OUTPUT_DIR'!"
+  else
+    echo "✅ 🎯 Successfully generated translation types and constants in '$OUTPUT_DIR'!"
+  fi
 fi

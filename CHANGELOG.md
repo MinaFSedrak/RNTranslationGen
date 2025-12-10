@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.5.2] - 2025-12-10
+
+### Added
+
+- New `--output-mode` flag to control output structure:
+  - `single` (default): Generates a single `translations.types.ts` file with both types and constants
+  - `dual`: Generates separate `translations.types.d.ts` (types) and `translations.types.ts` (constants with re-export)
+- Updated README with `--output-mode` usage examples and dual-mode documentation
+- Enhanced help documentation to describe both output modes
+
 ## [1.5.1] - 2025-12-09
 
 ### Fixed
