@@ -107,7 +107,8 @@ This applies Prettier formatting with 80-character line wrapping for better code
   "input": "./src/translations/json_files",
   "output": "./src/generated/translation_types",
   "excludeKey": "translation",
-  "disableEslintQuotes": true
+  "disableEslintQuotes": true,
+  "format": true
 }
 ```
 
@@ -118,6 +119,7 @@ input: ./src/translations/json_files
 output: ./src/generated/translation_types
 excludeKey: translation
 disableEslintQuotes: true
+format: true
 ```
 
 ---

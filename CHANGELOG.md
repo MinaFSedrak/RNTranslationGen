@@ -1,5 +1,16 @@
 # Changelog
 
+## [1.5.4] - 2025-12-11
+
+### Fixed
+
+- Fixed `format` option support in JSON and YAML config files
+- Config files now correctly parse the `format` property and apply Prettier formatting when enabled
+
+### Changed
+
+- Enhanced config file parsing to support `format` property in both `rn-translation-gen.json` and `rn-translation-gen.yml`
+
 ## [1.5.3] - 2025-12-11
 
 ### Added

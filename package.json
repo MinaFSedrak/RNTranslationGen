@@ -1,6 +1,6 @@
 {
   "name": "rn-translation-gen",
-  "version": "1.5.3",
+  "version": "1.5.4",
   "description": "This library automatically generates strongly typed translation keys from JSON files for React Native and TypeScript projects. It ensures compile-time safety, preventing errors caused by incorrect translation keys.",
   "main": "rntranslationgen.sh",
   "bin": {
