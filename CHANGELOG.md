@@ -1,5 +1,23 @@
 # Changelog
 
+## [1.5.3] - 2025-12-11
+
+### Added
+
+- New `--format` flag to format generated files with Prettier for code style compliance
+- Prettier integration with automatic configuration:
+  - Print width: 80 characters
+  - Single quotes for string values
+  - Trailing commas in es5 format
+  - 2-space indentation
+- Automatic npx fallback when prettier is not globally installed
+- Support for `--format` flag in both single and dual output modes
+
+### Changed
+
+- Output file formatting now optional (default: false) to maintain backwards compatibility and performance
+- When `--format` flag is used, generated files are wrapped to 80-character line limit for better code readability
+
 ## [1.5.2] - 2025-12-10
 
 ### Added

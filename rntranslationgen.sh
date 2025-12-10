@@ -13,6 +13,7 @@ OPTIONS:
   --exclude-key <key>             Exclude a top-level key and unwrap its children (optional)
   --disable-eslint-quotes         Include eslint-disable-quotes comments in generated files (optional)
   --output-mode <mode>            Output mode: 'single' or 'dual' (default: single) (optional)
+  --format                        Format generated files with Prettier (default: false) (optional)
   --noEmit                        Verify types without generating files, similar to tsc --noEmit (optional)
   --help, -h                      Display this help message
 
@@ -34,6 +35,9 @@ EXAMPLES:
 
   # Check types without generating (for CI/CD pipelines)
   rn-translation-gen --input ./locales --output ./generated --noEmit
+
+  # Generate and format with Prettier
+  rn-translation-gen --input ./locales --output ./generated --format
 
 OUTPUT FILES:
   Single mode (default):
@@ -57,6 +61,7 @@ OUTPUT_DIR=""
 EXCLUDE_KEY=""
 DISABLE_ESLINT_QUOTES=false
 NO_EMIT=false
+FORMAT=false
 OUTPUT_MODE="single"
 
 # Parse arguments
@@ -79,6 +84,10 @@ while [[ "$#" -gt 0 ]]; do
       ;;
     --disable-eslint-quotes)
       DISABLE_ESLINT_QUOTES=true
+      shift
+      ;;
+    --format)
+      FORMAT=true
       shift
       ;;
     --noEmit)
@@ -230,27 +239,59 @@ fi
 
 # Add type export based on mode
 if [ "$OUTPUT_MODE" = "single" ]; then
-  # Single file: export types inline
+  # Single file: TRANSLATION_KEYS first, then types inline
+  echo "export const TRANSLATION_KEYS = " >> "$VALUES_FILE"
+  echo "$FILTERED_JSON" | jq -S 'def transform(prefix): 
+        with_entries(
+          .key as $k | 
+          if (.value | type) == "object" 
+          then .value |= transform("\(prefix)\($k).") 
+          else .value = "\(prefix)\($k)" 
+          end
+        ); 
+      transform("")' | sed "s/\"/'/g" | sed "s/'\\([a-zA-Z_][a-zA-Z0-9_]*\\)':/\1:/g" | sed '$s/$/;/' >> "$VALUES_FILE"
+  echo "" >> "$VALUES_FILE"
   echo "export type TranslationKey =" >> "$VALUES_FILE"
-  echo "$FILTERED_JSON" | jq -r 'paths | map(tostring) | join(".")' | sed 's/^/  | "/;s/$/"/' >> "$VALUES_FILE"
-  echo ";" >> "$VALUES_FILE"
+  KEYS=$(echo "$FILTERED_JSON" | jq -r 'paths | map(tostring) | join(".")')
+  LAST_KEY=$(echo "$KEYS" | tail -1)
+  echo "$KEYS" | sed '$d' | sed "s/^/  | '/;s/$/'/" >> "$VALUES_FILE"
+  echo "  | '$LAST_KEY';" >> "$VALUES_FILE"
 else
   # Dual file: re-export type from .d.ts file
   echo "export type { TranslationKey } from './translations.types.d';" >> "$VALUES_FILE"
+  echo "" >> "$VALUES_FILE"
+  echo "export const TRANSLATION_KEYS = " >> "$VALUES_FILE"
+  echo "$FILTERED_JSON" | jq -S 'def transform(prefix): 
+        with_entries(
+          .key as $k | 
+          if (.value | type) == "object" 
+          then .value |= transform("\(prefix)\($k).") 
+          else .value = "\(prefix)\($k)" 
+          end
+        ); 
+      transform("")' | sed "s/\"/'/g" | sed "s/'\\([a-zA-Z_][a-zA-Z0-9_]*\\)':/\1:/g" | sed '$s/$/;/' >> "$VALUES_FILE"
+  echo "" >> "$VALUES_FILE"
 fi
 
-# Add translation keys
-echo "export const TRANSLATION_KEYS = " >> "$VALUES_FILE"
-echo "$FILTERED_JSON" | jq 'def transform(prefix): 
-      with_entries(
-        .key as $k | 
-        if (.value | type) == "object" 
-        then .value |= transform("\(prefix)\($k).") 
-        else .value = "\(prefix)\($k)" 
-        end
-      ); 
-    transform("")' >> "$VALUES_FILE"
-echo ";" >> "$VALUES_FILE"
+# Format files with Prettier if available and enabled
+format_with_prettier() {
+  local file=$1
+  if command -v prettier &> /dev/null; then
+    prettier --write "$file" --print-width 80 --single-quote --semi --trailing-comma es5 --tab-width 2 --use-tabs false 2>/dev/null || true
+  elif command -v npx &> /dev/null; then
+    npx prettier --write "$file" --print-width 80 --single-quote --semi --trailing-comma es5 --tab-width 2 --use-tabs false 2>/dev/null || true
+  fi
+}
+
+# Format the generated file(s) only if --format flag is enabled
+if [ "$FORMAT" = true ]; then
+  if [ "$OUTPUT_MODE" = "single" ]; then
+    format_with_prettier "$VALUES_FILE"
+  else
+    format_with_prettier "$VALUES_FILE"
+    format_with_prettier "$TYPES_FILE"
+  fi
+fi
 
 # Handle --noEmit mode
 if [ "$NO_EMIT" = true ]; then

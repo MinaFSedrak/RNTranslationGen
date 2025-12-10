@@ -19,6 +19,7 @@ Additionally, this tool is designed as a **build-time utility**, meaning it shou
 ✅ **Optionally exclude a top-level key (e.g., "translation") and unwrap its children using `--exclude-key`.**\
 ✅ **Control eslint quote disabling in generated files using `--disable-eslint-quotes` flag.**\
 ✅ **Verify types without generating files using `--noEmit` flag (perfect for CI/CD pipelines).**\
+✅ **Optional Prettier formatting with `--format` flag for 80-character line wrapping and code style compliance.**\
 ✅ **Built-in help documentation with `--help` and `-h` flags.**
 
 ---
@@ -54,6 +55,7 @@ npx rn-translation-gen --input <path-to-json-files> --output <path-to-generated-
 - `--output-mode` (optional): Output mode - `single` (default) generates one file, `dual` generates two files
 - `--exclude-key` (optional): Exclude a top-level key and unwrap its children
 - `--disable-eslint-quotes` (optional): Include `/* eslint-disable quotes */` comments in generated files
+- `--format` (optional): Format generated files with Prettier for code style compliance (default: false)
 - `--noEmit` (optional): Verify types without generating files (similar to `tsc --noEmit`)
 - `--help, -h` (optional): Display help documentation with all available options
 
@@ -89,6 +91,14 @@ npx rn-translation-gen --input ./src/translations/json_files --output ./src/gene
 ```
 
 This fails if translation files have changed but types haven't been regenerated, perfect for catching out-of-sync translations in your pipeline.
+
+**Formatting generated files with Prettier:**
+
+```sh
+npx rn-translation-gen --input ./src/translations/json_files --output ./src/generated/translation_types --format
+```
+
+This applies Prettier formatting with 80-character line wrapping for better code readability and style compliance.
 
 **Using a JSON config file (`rn-translation-gen.json`):**
 
