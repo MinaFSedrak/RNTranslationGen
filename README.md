@@ -42,87 +42,62 @@ yarn add rn-translation-gen --dev
 
 ## **⚙️ Usage**
 
-To generate translation types and keys, run the following command:
+### **Quick Start with Config File**
 
-```sh
-npx rn-translation-gen --input <path-to-json-files> --output <path-to-generated-files> [--output-mode single|dual] [--exclude-key <key-to-exclude>] [--disable-eslint-quotes] [--noEmit]
-```
-
-### **Flags:**
-
-- `--input` (required): Path to the directory containing translation JSON files
-- `--output` (required): Path to the output directory for generated files
-- `--output-mode` (optional): Output mode - `single` (default) generates one file, `dual` generates two files
-- `--exclude-key` (optional): Exclude a top-level key and unwrap its children
-- `--disable-eslint-quotes` (optional): Include `/* eslint-disable quotes */` comments in generated files
-- `--format` (optional): Format generated files with Prettier for code style compliance (default: false)
-- `--noEmit` (optional): Verify types without generating files (similar to `tsc --noEmit`)
-- `--help, -h` (optional): Display help documentation with all available options
-
-Alternatively, you can use a config file for input and output paths. The tool will automatically detect either:
-
-- `rn-translation-gen.json`
-- `rn-translation-gen.yml`
-
-### **Examples:**
-
-**Single-file mode (default) with exclude-key:**
-
-```sh
-npx rn-translation-gen --input ./src/translations/json_files --output ./src/generated/translation_types --exclude-key translation
-```
-
-**Dual-file mode with exclude-key:**
-
-```sh
-npx rn-translation-gen --input ./src/translations/json_files --output ./src/generated/translation_types --output-mode dual --exclude-key translation
-```
-
-**Using CLI arguments with eslint disable comments:**
-
-```sh
-npx rn-translation-gen --input ./src/translations/json_files --output ./src/generated/translation_types --disable-eslint-quotes
-```
-
-**Verifying types without generating files (for CI/CD pipelines):**
-
-```sh
-npx rn-translation-gen --input ./src/translations/json_files --output ./src/generated/translation_types --noEmit
-```
-
-This fails if translation files have changed but types haven't been regenerated, perfect for catching out-of-sync translations in your pipeline.
-
-**Formatting generated files with Prettier:**
-
-```sh
-npx rn-translation-gen --input ./src/translations/json_files --output ./src/generated/translation_types --format
-```
-
-This applies Prettier formatting with 80-character line wrapping for better code readability and style compliance.
-
-**Using a JSON config file (`rn-translation-gen.json`):**
+Create `rn-translation-gen.json` in your project root:
 
 ```json
 {
-  "input": "./src/translations/json_files",
-  "output": "./src/generated/translation_types",
-  "excludeKey": "translation",
-  "disableEslintQuotes": true,
-  "format": true
+  "input": "./src/locales",
+  "output": "./src/generated/translations",
+  "excludeKey": "translation"
 }
 ```
 
-**Using a YAML config file (`rn-translation-gen.yml`):**
+Then add to your `package.json`:
 
-```yaml
-input: ./src/translations/json_files
-output: ./src/generated/translation_types
-excludeKey: translation
-disableEslintQuotes: true
-format: true
+```json
+{
+  "scripts": {
+    "translations:generate": "rn-translation-gen",
+    "translations:check": "rn-translation-gen --noEmit"
+  }
+}
 ```
 
----
+Run:
+
+```bash
+npm run translations:generate
+npm run translations:check
+```
+
+### **All Available Flags**
+
+- `--input` (required): Path to translation JSON files directory
+- `--output` (required): Path to output directory for generated files
+- `--exclude-key` (optional): Exclude and unwrap a top-level key (e.g., "translation")
+- `--output-mode` (optional): `single` (default) or `dual` mode
+- `--format` (optional): Format with Prettier (default: false)
+- `--disable-eslint-quotes` (optional): Add eslint-disable comments
+- `--noEmit` (optional): Type check only, don't generate files
+- `--help, -h` (optional): Show help
+
+### **Config File Options**
+
+Both JSON and YAML config files support all flags:
+
+```json
+{
+  "input": "./src/locales",
+  "output": "./src/generated/translations",
+  "excludeKey": "translation",
+  "format": true,
+  "outputMode": "dual",
+  "disableEslintQuotes": false,
+  "noEmit": false
+}
+```
 
 ## **📌 Example**
 

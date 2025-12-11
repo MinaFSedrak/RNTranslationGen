@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.5.5] - 2025-12-11
+
+### Fixed
+
+- Fixed `outputMode` config file parsing for both JSON and YAML config files
+- Fixed `noEmit` config file parsing for both JSON and YAML config files
+- Config files now fully support all CLI flags: `input`, `output`, `excludeKey`, `disableEslintQuotes`, `format`, `outputMode`, and `noEmit`
+
+### Changed
+
+- Enhanced config file parsing to support all available configuration options
+
 ## [1.5.4] - 2025-12-11
 
 ### Fixed

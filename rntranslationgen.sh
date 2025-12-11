@@ -121,12 +121,16 @@ if [ -z "$TRANSLATION_DIR" ] || [ -z "$OUTPUT_DIR" ]; then
         EXCLUDE_KEY=$(awk -F ': ' '/excludeKey:/ {print $2}' "$file" | tr -d '"')
         DISABLE_ESLINT=$(awk -F ': ' '/disableEslintQuotes:/ {print $2}' "$file" | tr -d '"')
         FORMAT_CONFIG=$(awk -F ': ' '/format:/ {print $2}' "$file" | tr -d '"')
+        OUTPUT_MODE_CONFIG=$(awk -F ': ' '/outputMode:/ {print $2}' "$file" | tr -d '"')
+        NO_EMIT_CONFIG=$(awk -F ': ' '/noEmit:/ {print $2}' "$file" | tr -d '"')
       else
         TRANSLATION_DIR=$(jq -r '.input // empty' "$file")
         OUTPUT_DIR=$(jq -r '.output // empty' "$file")
         EXCLUDE_KEY=$(jq -r '.excludeKey // empty' "$file")
         DISABLE_ESLINT=$(jq -r '.disableEslintQuotes // empty' "$file")
         FORMAT_CONFIG=$(jq -r '.format // empty' "$file")
+        OUTPUT_MODE_CONFIG=$(jq -r '.outputMode // empty' "$file")
+        NO_EMIT_CONFIG=$(jq -r '.noEmit // empty' "$file")
       fi
       # Convert YAML/JSON boolean to bash boolean
       if [ "$DISABLE_ESLINT" = "true" ] || [ "$DISABLE_ESLINT" = "True" ]; then
@@ -134,6 +138,12 @@ if [ -z "$TRANSLATION_DIR" ] || [ -z "$OUTPUT_DIR" ]; then
       fi
       if [ "$FORMAT_CONFIG" = "true" ] || [ "$FORMAT_CONFIG" = "True" ]; then
         FORMAT=true
+      fi
+      if [ "$NO_EMIT_CONFIG" = "true" ] || [ "$NO_EMIT_CONFIG" = "True" ]; then
+        NO_EMIT=true
+      fi
+      if [ ! -z "$OUTPUT_MODE_CONFIG" ] && ([ "$OUTPUT_MODE_CONFIG" = "single" ] || [ "$OUTPUT_MODE_CONFIG" = "dual" ]); then
+        OUTPUT_MODE="$OUTPUT_MODE_CONFIG"
       fi
       break
     fi
