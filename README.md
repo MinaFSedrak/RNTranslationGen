@@ -21,6 +21,7 @@ Additionally, this tool is designed as a **build-time utility**, meaning it shou
 ✅ **Verify types without generating files using `--noEmit` flag (perfect for CI/CD pipelines).**\
 ✅ **Optional Prettier formatting with `--format` flag for 80-character line wrapping and code style compliance.**\
 ✅ **Built-in help documentation with `--help` and `-h` flags.**
+✅ **Runtime validator helper `isTranslationKey` emitted by default (disable with `--no-validator`).**
 
 ---
 
@@ -80,6 +81,7 @@ npm run translations:check
 - `--output-mode` (optional): `single` (default) or `dual` mode
 - `--format` (optional): Format with Prettier (default: false)
 - `--disable-eslint-quotes` (optional): Add eslint-disable comments
+- `--no-validator` (optional): Skip emitting runtime validator helper (default: emitted)
 - `--noEmit` (optional): Type check only, don't generate files
 - `--help, -h` (optional): Show help
 
@@ -95,6 +97,7 @@ Both JSON and YAML config files support all flags:
   "format": true,
   "outputMode": "dual",
   "disableEslintQuotes": false,
+  "noValidator": false,
   "noEmit": false
 }
 ```

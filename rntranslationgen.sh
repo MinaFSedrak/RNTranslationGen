@@ -15,6 +15,7 @@ OPTIONS:
   --output-mode <mode>            Output mode: 'single' or 'dual' (default: single) (optional)
   --format                        Format generated files with Prettier (default: false) (optional)
   --noEmit                        Verify types without generating files, similar to tsc --noEmit (optional)
+  --no-validator                  Skip emitting the runtime validator helper (isTranslationKey). Default: emit
   --help, -h                      Display this help message
 
 EXAMPLES:
@@ -63,6 +64,7 @@ DISABLE_ESLINT_QUOTES=false
 NO_EMIT=false
 FORMAT=false
 OUTPUT_MODE="single"
+VALIDATOR_ENABLED=true
 
 # Parse arguments
 while [[ "$#" -gt 0 ]]; do
@@ -94,6 +96,10 @@ while [[ "$#" -gt 0 ]]; do
       NO_EMIT=true
       shift
       ;;
+    --no-validator)
+      VALIDATOR_ENABLED=false
+      shift
+      ;;
     --output-mode)
       OUTPUT_MODE="$2"
       if [ "$OUTPUT_MODE" != "single" ] && [ "$OUTPUT_MODE" != "dual" ]; then
@@ -123,6 +129,7 @@ if [ -z "$TRANSLATION_DIR" ] || [ -z "$OUTPUT_DIR" ]; then
         FORMAT_CONFIG=$(awk -F ': ' '/format:/ {print $2}' "$file" | tr -d '"')
         OUTPUT_MODE_CONFIG=$(awk -F ': ' '/outputMode:/ {print $2}' "$file" | tr -d '"')
         NO_EMIT_CONFIG=$(awk -F ': ' '/noEmit:/ {print $2}' "$file" | tr -d '"')
+        NO_VALIDATOR_CONFIG=$(awk -F ': ' '/noValidator:/ {print $2}' "$file" | tr -d '"')
       else
         TRANSLATION_DIR=$(jq -r '.input // empty' "$file")
         OUTPUT_DIR=$(jq -r '.output // empty' "$file")
@@ -131,6 +138,7 @@ if [ -z "$TRANSLATION_DIR" ] || [ -z "$OUTPUT_DIR" ]; then
         FORMAT_CONFIG=$(jq -r '.format // empty' "$file")
         OUTPUT_MODE_CONFIG=$(jq -r '.outputMode // empty' "$file")
         NO_EMIT_CONFIG=$(jq -r '.noEmit // empty' "$file")
+        NO_VALIDATOR_CONFIG=$(jq -r '.noValidator // empty' "$file")
       fi
       # Convert YAML/JSON boolean to bash boolean
       if [ "$DISABLE_ESLINT" = "true" ] || [ "$DISABLE_ESLINT" = "True" ]; then
@@ -141,6 +149,9 @@ if [ -z "$TRANSLATION_DIR" ] || [ -z "$OUTPUT_DIR" ]; then
       fi
       if [ "$NO_EMIT_CONFIG" = "true" ] || [ "$NO_EMIT_CONFIG" = "True" ]; then
         NO_EMIT=true
+      fi
+      if [ "$NO_VALIDATOR_CONFIG" = "true" ] || [ "$NO_VALIDATOR_CONFIG" = "True" ]; then
+        VALIDATOR_ENABLED=false
       fi
       if [ ! -z "$OUTPUT_MODE_CONFIG" ] && ([ "$OUTPUT_MODE_CONFIG" = "single" ] || [ "$OUTPUT_MODE_CONFIG" = "dual" ]); then
         OUTPUT_MODE="$OUTPUT_MODE_CONFIG"
@@ -273,7 +284,8 @@ if [ "$OUTPUT_MODE" = "single" ]; then
   echo "  | '$LAST_KEY';" >> "$VALUES_FILE"
 else
   # Dual file: re-export type from .d.ts file
-  echo "export type { TranslationKey } from './translations.types.d';" >> "$VALUES_FILE"
+  echo "import type { TranslationKey } from './translations.types.d';" >> "$VALUES_FILE"
+  echo "export type { TranslationKey };" >> "$VALUES_FILE"
   echo "" >> "$VALUES_FILE"
   echo "export const TRANSLATION_KEYS = " >> "$VALUES_FILE"
   echo "$FILTERED_JSON" | jq -S 'def transform(prefix): 
@@ -286,6 +298,30 @@ else
         ); 
       transform("")' | sed "s/\"/'/g" | sed "s/'\\([a-zA-Z_][a-zA-Z0-9_]*\\)':/\1:/g" | sed '$s/$/;/' >> "$VALUES_FILE"
   echo "" >> "$VALUES_FILE"
+fi
+
+if [ "$VALIDATOR_ENABLED" = true ]; then
+  cat << 'EOF' >> "$VALUES_FILE"
+
+const collectTranslationKeys = (node: unknown, acc: TranslationKey[] = []): TranslationKey[] => {
+  if (node && typeof node === 'object') {
+    for (const value of Object.values(node as Record<string, unknown>)) {
+      collectTranslationKeys(value, acc);
+    }
+  } else {
+    acc.push(node as TranslationKey);
+  }
+  return acc;
+};
+
+const TRANSLATION_KEY_SET: Set<TranslationKey> = new Set(
+  collectTranslationKeys(TRANSLATION_KEYS)
+);
+
+export function isTranslationKey(key: string): key is TranslationKey {
+  return TRANSLATION_KEY_SET.has(key as TranslationKey);
+}
+EOF
 fi
 
 # Format files with Prettier if available and enabled

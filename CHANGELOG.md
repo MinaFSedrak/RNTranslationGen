@@ -2,6 +2,17 @@
 
 ## [1.5.5] - 2025-12-11
 
+## [1.5.6] - 2025-12-29
+
+### Added
+
+- Runtime validator helper (`isTranslationKey`) now emitted by default in both single and dual modes
+- New `--no-validator` flag and `noValidator` config key to opt out of emitting the runtime validator
+
+### Changed
+
+- Generated `translations.types.ts` imports and re-exports `TranslationKey` cleanly in dual mode
+
 ### Fixed
 
 - Fixed `outputMode` config file parsing for both JSON and YAML config files
