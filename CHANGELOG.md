@@ -1,7 +1,5 @@
 # Changelog
 
-## [1.5.5] - 2025-12-11
-
 ## [1.5.6] - 2025-12-29
 
 ### Added
@@ -12,6 +10,8 @@
 ### Changed
 
 - Generated `translations.types.ts` imports and re-exports `TranslationKey` cleanly in dual mode
+
+## [1.5.5] - 2025-12-11
 
 ### Fixed
 
